@@ -17,6 +17,14 @@ Write-Log "Usando binario del IDE: $AgCmd" "INFO"
 $Extensions = @("llvm-vs-code-extensions.vscode-clangd", "platformio.platformio-ide")
 $Installed = & $AgCmd --list-extensions
 
+if ([string]::IsNullOrWhiteSpace(($Installed -join "`n"))) {
+    Write-Log "--list-extensions no devolvio ninguna salida util (ExitCode: $LASTEXITCODE). El binario del IDE parece estar roto." "FAIL"
+    exit 1
+} elseif ($LASTEXITCODE -ne 0) {
+    Write-Log "--list-extensions crasheo al cerrar (ExitCode: $LASTEXITCODE) pero ya entrego el listado de extensiones. Ignorando el codigo de salida residual." "WARN"
+    $LASTEXITCODE = 0
+}
+
 foreach ($Ext in $Extensions) {
     if (($Installed -match $Ext) -and -not $Force) {
         Write-Log "Extension $Ext ya esta instalada." "OK"
