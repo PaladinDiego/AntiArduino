@@ -1,0 +1,38 @@
+name: Windows Setup Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: PowerShell Lint (Syntax Parser)
+      shell: pwsh
+      run: |
+        $errors = $null
+        $scripts = Get-ChildItem -Path . -Filter "*.ps1" -Recurse
+        $failed = $false
+        
+        foreach ($script in $scripts) {
+          [System.Management.Automation.Language.Parser]::ParseFile($script.FullName, [ref]$null, [ref]$errors)
+          if ($errors.Count -gt 0) {
+            Write-Host "::error file=$($script.FullName)::Errores de sintaxis en $($script.Name)"
+            foreach ($err in $errors) { Write-Host $err }
+            $failed = $true
+          }
+        }
+        if ($failed) { exit 1 }
+        
+    - name: DryRun Orchestrator Check
+      shell: pwsh
+      run: |
+        .\Deploy-Environment.ps1 -DryRun
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

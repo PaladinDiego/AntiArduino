@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Serial Plotter — Antigravity Embedded</title>
+<style>
+  :root { --bg:#12141a; --panel:#1b1e26; --fg:#e6e8ee; --dim:#8b91a3; --accent:#f0a03c; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font:14px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+  header { padding:14px 18px; background:var(--panel); display:flex;
+           gap:12px; align-items:center; flex-wrap:wrap;
+           border-bottom:1px solid #2a2e39; }
+  h1 { font-size:15px; margin:0 12px 0 0; font-weight:600; letter-spacing:.02em; }
+  button { background:var(--accent); color:#12141a; border:0; padding:7px 14px;
+           border-radius:5px; font:inherit; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  select, input { background:#12141a; color:var(--fg); border:1px solid #2a2e39;
+                  border-radius:5px; padding:6px 8px; font:inherit; }
+  #status { color:var(--dim); margin-left:auto; }
+  main { display:grid; grid-template-columns: 1fr 340px; gap:0; height:calc(100vh - 59px); }
+  canvas { width:100%; height:100%; display:block; }
+  aside { background:var(--panel); border-left:1px solid #2a2e39;
+          padding:14px 16px; overflow:auto; }
+  aside h2 { font-size:12px; text-transform:uppercase; letter-spacing:.08em;
+             color:var(--dim); margin:0 0 8px; }
+  #raw { white-space:pre-wrap; word-break:break-all; color:var(--dim);
+         font-size:12px; max-height:38vh; overflow:auto; }
+  .legend span { display:inline-block; margin:0 10px 6px 0; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%;
+         margin-right:5px; vertical-align:middle; }
+  .warn { background:#3a2a12; border:1px solid #6b4a1c; padding:9px 11px;
+          border-radius:5px; color:#f0c48c; font-size:12px; margin-bottom:14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Serial Plotter</h1>
+  <button id="connect">Conectar</button>
+  <button id="disconnect" disabled>Desconectar</button>
+  <label>Baud
+    <select id="baud">
+      <option>9600</option><option>19200</option><option>38400</option>
+      <option>57600</option><option selected>115200</option><option>921600</option>
+    </select>
+  </label>
+  <label>Ventana <input id="window" type="number" value="300" min="20" max="5000" style="width:80px"></label>
+  <button id="clear">Limpiar</button>
+  <span id="status">desconectado</span>
+</header>
+
+<main>
+  <canvas id="chart"></canvas>
+  <aside>
+    <div class="warn">
+      El puerto COM es exclusivo. Cierra el monitor serial
+      (<code>stop_serial_monitor.ps1</code>) antes de conectar aqui.
+      Y sirve esta pagina por HTTP, no como <code>file://</code>:<br>
+      <code>python -m http.server 8000</code>
+    </div>
+    <h2>Series detectadas</h2>
+    <div class="legend" id="legend"></div>
+    <h2 style="margin-top:16px">Crudo</h2>
+    <div id="raw"></div>
+  </aside>
+</main>
+
+<script>
+// Formatos aceptados por linea:
+//   12.5,3.4,7          -> serie0, serie1, serie2
+//   temp:23.4 hum:55    -> series con nombre
+//   >temp:23.4          -> formato Teleplot
+const COLORS = ['#f0a03c','#4ec9b0','#9cdcfe','#ce9178','#c586c0','#dcdcaa','#6a9955'];
+const series = new Map();
+let port, reader, keepReading = false, buffer = '';
+
+const $ = id => document.getElementById(id);
+const canvas = $('chart'), ctx = canvas.getContext('2d');
+
+function resize() {
+  const r = canvas.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  canvas.width = r.width * d; canvas.height = r.height * d;
+  ctx.setTransform(d, 0, 0, d, 0, 0);
+  draw();
+}
+window.addEventListener('resize', resize);
+
+function push(name, value) {
+  if (!series.has(name)) {
+    series.set(name, { color: COLORS[series.size % COLORS.length], data: [] });
+    renderLegend();
+  }
+  const s = series.get(name);
+  s.data.push(value);
+  const max = parseInt($('window').value, 10) || 300;
+  while (s.data.length > max) s.data.shift();
+}
+
+function renderLegend() {
+  $('legend').innerHTML = [...series.entries()].map(
+    ([n, s]) => `<span><i class="dot" style="background:${s.color}"></i>${n}</span>`
+  ).join('');
+}
+
+function parseLine(line) {
+  line = line.trim();
+  if (!line) return;
+  const rawBox = $('raw');
+  rawBox.textContent = (line + '\n' + rawBox.textContent).slice(0, 4000);
+
+  if (line.startsWith('>')) line = line.slice(1);            // Teleplot
+
+  if (line.includes(':')) {
+    let matched = false;
+    line.split(/[\s,;]+/).forEach(tok => {
+      const m = tok.match(/^([\w.\-]+):(-?\d+(?:\.\d+)?)$/);
+      if (m) { push(m[1], parseFloat(m[2])); matched = true; }
+    });
+    if (matched) return;
+  }
+
+  const nums = line.split(/[\s,;\t]+/).map(parseFloat).filter(n => !isNaN(n));
+  nums.forEach((n, i) => push('serie' + i, n));
+}
+
+function draw() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = '#232732'; ctx.lineWidth = 1;
+  for (let i = 1; i < 5; i++) {
+    const y = (h / 5) * i;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  }
+  if (!series.size) return;
+
+  let min = Infinity, max = -Infinity, len = 0;
+  series.forEach(s => {
+    s.data.forEach(v => { if (v < min) min = v; if (v > max) max = v; });
+    len = Math.max(len, s.data.length);
+  });
+  if (min === max) { min -= 1; max += 1; }
+  const pad = (max - min) * 0.08; min -= pad; max += pad;
+
+  ctx.fillStyle = '#8b91a3'; ctx.font = '11px monospace';
+  ctx.fillText(max.toFixed(2), 6, 14);
+  ctx.fillText(min.toFixed(2), 6, h - 6);
+
+  ctx.lineWidth = 1.8;
+  series.forEach(s => {
+    ctx.strokeStyle = s.color; ctx.beginPath();
+    s.data.forEach((v, i) => {
+      const x = (i / Math.max(1, len - 1)) * w;
+      const y = h - ((v - min) / (max - min)) * h;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    });
+    ctx.stroke();
+  });
+}
+
+async function readLoop() {
+  const decoder = new TextDecoderStream();
+  port.readable.pipeTo(decoder.writable).catch(() => {});
+  reader = decoder.readable.getReader();
+  while (keepReading) {
+    try {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += value;
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop();
+      lines.forEach(parseLine);
+      draw();
+    } catch (e) { break; }
+  }
+}
+
+$('connect').onclick = async () => {
+  if (!('serial' in navigator)) {
+    $('status').textContent = 'Web Serial no disponible (usa Chrome/Edge por HTTP)';
+    return;
+  }
+  try {
+    port = await navigator.serial.requestPort();
+    await port.open({ baudRate: parseInt($('baud').value, 10) });
+    keepReading = true;
+    $('connect').disabled = true; $('disconnect').disabled = false;
+    $('status').textContent = 'conectado @ ' + $('baud').value;
+    readLoop();
+  } catch (e) {
+    $('status').textContent = 'error: ' + e.message;
+  }
+};
+
+$('disconnect').onclick = async () => {
+  keepReading = false;
+  try { if (reader) await reader.cancel(); } catch (e) {}
+  try { if (port) await port.close(); } catch (e) {}
+  $('connect').disabled = false; $('disconnect').disabled = true;
+  $('status').textContent = 'desconectado';
+};
+
+$('clear').onclick = () => { series.clear(); renderLegend(); $('raw').textContent = ''; draw(); };
+
+resize();
+</script>
+</body>
+</html>

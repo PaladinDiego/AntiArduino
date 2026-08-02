@@ -1,0 +1,265 @@
+{
+  "Esqueleto Arduino (setup + loop)": {
+    "prefix": "askeleton",
+    "scope": "cpp",
+    "body": [
+      "#include <Arduino.h>",
+      "",
+      "void setup() {",
+      "  Serial.begin(${1:115200});",
+      "  ${2:// inicializacion}",
+      "}",
+      "",
+      "void loop() {",
+      "  $0",
+      "}"
+    ],
+    "description": "Esqueleto minimo en .cpp (preferido sobre .ino en PlatformIO)"
+  },
+
+  "Serial begin con espera": {
+    "prefix": "aserialbegin",
+    "scope": "cpp",
+    "body": [
+      "Serial.begin(${1:115200});",
+      "while (!Serial) { delay(10); }  // necesario en 32U4/SAMD/ESP32-S3 USB-CDC",
+      "Serial.println(F(\"${2:Sistema listo}\"));"
+    ],
+    "description": "Serial.begin robusto en placas con USB nativo"
+  },
+
+  "Buffer serial caracter por caracter (OBLIGATORIO con log2file)": {
+    "prefix": "aserialbuffer",
+    "scope": "cpp",
+    "body": [
+      "// Lectura caracter por caracter.",
+      "// NO uses Serial.readStringUntil(): con send_on_enter deshabilitado",
+      "// (lo que pasa al lanzar el monitor con --filter log2file) cada tecla",
+      "// llega suelta y readStringUntil corta las palabras por timeout.",
+      "String cmd = \"\";",
+      "",
+      "void handleSerial() {",
+      "  while (Serial.available() > 0) {",
+      "    char c = Serial.read();",
+      "    if (c == '\\\\n' || c == '\\\\r') {",
+      "      if (cmd.length() > 0) {",
+      "        cmd.trim();",
+      "        ${1:// --- procesar comando ---}",
+      "        if (cmd.equalsIgnoreCase(\"ON\")) {",
+      "          digitalWrite(LED_BUILTIN, HIGH);",
+      "          Serial.println(F(\"LED ON\"));",
+      "        } else if (cmd.equalsIgnoreCase(\"OFF\")) {",
+      "          digitalWrite(LED_BUILTIN, LOW);",
+      "          Serial.println(F(\"LED OFF\"));",
+      "        } else {",
+      "          Serial.print(F(\"Comando desconocido: \"));",
+      "          Serial.println(cmd);",
+      "        }",
+      "        cmd = \"\";",
+      "      }",
+      "    } else {",
+      "      cmd += c;",
+      "    }",
+      "  }",
+      "}$0"
+    ],
+    "description": "Patron de buffer serial resistente. El unico que funciona en este entorno."
+  },
+
+  "Timer no bloqueante con millis()": {
+    "prefix": "amillis",
+    "scope": "cpp",
+    "body": [
+      "static unsigned long ${1:lastRun} = 0;",
+      "const unsigned long ${2:INTERVAL_MS} = ${3:1000};",
+      "",
+      "if (millis() - ${1:lastRun} >= ${2:INTERVAL_MS}) {",
+      "  ${1:lastRun} = millis();",
+      "  $0",
+      "}"
+    ],
+    "description": "Temporizador sin delay(), inmune al overflow de millis()"
+  },
+
+  "Interrupcion externa": {
+    "prefix": "ainterrupt",
+    "scope": "cpp",
+    "body": [
+      "volatile bool ${1:flagISR} = false;",
+      "",
+      "void IRAM_ATTR ${2:onPulse}() {   // IRAM_ATTR solo en ESP32; en AVR quitalo",
+      "  ${1:flagISR} = true;",
+      "}",
+      "",
+      "// en setup():",
+      "pinMode(${3:2}, INPUT_PULLUP);",
+      "attachInterrupt(digitalPinToInterrupt(${3:2}), ${2:onPulse}, ${4|FALLING,RISING,CHANGE|});",
+      "$0"
+    ],
+    "description": "ISR con flag volatil (nunca hagas Serial.print dentro de una ISR)"
+  },
+
+  "Antirrebote de boton (no bloqueante)": {
+    "prefix": "adebounce",
+    "scope": "cpp",
+    "body": [
+      "const uint8_t ${1:BTN_PIN} = ${2:4};",
+      "const unsigned long DEBOUNCE_MS = 50;",
+      "static bool lastReading = HIGH;",
+      "static bool stableState = HIGH;",
+      "static unsigned long lastChange = 0;",
+      "",
+      "bool reading = digitalRead(${1:BTN_PIN});",
+      "if (reading != lastReading) { lastChange = millis(); }",
+      "if (millis() - lastChange > DEBOUNCE_MS && reading != stableState) {",
+      "  stableState = reading;",
+      "  if (stableState == LOW) { $0 }",
+      "}",
+      "lastReading = reading;"
+    ],
+    "description": "Debounce sin delay()"
+  },
+
+  "Tarea FreeRTOS (ESP32)": {
+    "prefix": "afreertos",
+    "scope": "cpp",
+    "body": [
+      "void ${1:taskBlink}(void *pvParameters) {",
+      "  (void)pvParameters;",
+      "  for (;;) {",
+      "    ${2:digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));}",
+      "    vTaskDelay(pdMS_TO_TICKS(${3:500}));",
+      "  }",
+      "}",
+      "",
+      "// en setup():",
+      "xTaskCreatePinnedToCore(${1:taskBlink}, \"${1:taskBlink}\", ${4:2048}, NULL, ${5:1}, NULL, ${6|1,0|});",
+      "$0"
+    ],
+    "description": "Tarea FreeRTOS anclada a un nucleo (solo ESP32)"
+  },
+
+  "Conexion WiFi (ESP32) con timeout": {
+    "prefix": "awifi",
+    "scope": "cpp",
+    "body": [
+      "#include <WiFi.h>",
+      "",
+      "const char *WIFI_SSID = \"${1:MiRed}\";",
+      "const char *WIFI_PASS = \"${2:MiClave}\";",
+      "",
+      "bool connectWiFi(unsigned long timeoutMs = 15000) {",
+      "  WiFi.mode(WIFI_STA);",
+      "  WiFi.begin(WIFI_SSID, WIFI_PASS);",
+      "  unsigned long start = millis();",
+      "  while (WiFi.status() != WL_CONNECTED) {",
+      "    if (millis() - start > timeoutMs) {",
+      "      Serial.println(F(\"[FAIL] WiFi timeout\"));",
+      "      return false;",
+      "    }",
+      "    delay(250);",
+      "  }",
+      "  Serial.print(F(\"[OK] IP: \"));",
+      "  Serial.println(WiFi.localIP());",
+      "  return true;",
+      "}$0"
+    ],
+    "description": "WiFi con timeout real, no un while infinito"
+  },
+
+  "Servidor web minimo (ESP32) con boton": {
+    "prefix": "awebserver",
+    "scope": "cpp",
+    "body": [
+      "#include <WiFi.h>",
+      "#include <WebServer.h>",
+      "",
+      "WebServer server(80);",
+      "",
+      "void handleRoot() {",
+      "  server.send(200, \"text/html\",",
+      "    \"<!DOCTYPE html><html><body style='font-family:sans-serif;text-align:center'>\"",
+      "    \"<h2>${1:Control}</h2>\"",
+      "    \"<p><a href='/on'><button style='font-size:2em'>ON</button></a></p>\"",
+      "    \"<p><a href='/off'><button style='font-size:2em'>OFF</button></a></p>\"",
+      "    \"</body></html>\");",
+      "}",
+      "",
+      "void setupServer() {",
+      "  server.on(\"/\", handleRoot);",
+      "  server.on(\"/on\", []() { ${2:Serial2.println(\"ON\");} server.sendHeader(\"Location\", \"/\"); server.send(303); });",
+      "  server.on(\"/off\", []() { ${3:Serial2.println(\"OFF\");} server.sendHeader(\"Location\", \"/\"); server.send(303); });",
+      "  server.begin();",
+      "}$0"
+    ],
+    "description": "Pagina LAN con botones que disparan acciones"
+  },
+
+  "Enlace serie ESP32 -> Arduino (SoftwareSerial)": {
+    "prefix": "aserialbridge",
+    "scope": "cpp",
+    "body": [
+      "// LADO ARDUINO (receptor). Cableado unidireccional:",
+      "//   ESP32 GPIO17 (TX2, 3.3V) -> Arduino pin ${1:2} (RX)",
+      "//   GND comun OBLIGATORIO. NO conectes el TX del Arduino (5V) al ESP32.",
+      "//   Pines 0/1 estan reservados por USB: usa SoftwareSerial.",
+      "#include <Arduino.h>",
+      "#include <SoftwareSerial.h>",
+      "",
+      "SoftwareSerial link(${1:2}, ${2:3});  // RX, TX",
+      "String buf = \"\";",
+      "",
+      "void setup() {",
+      "  Serial.begin(115200);",
+      "  link.begin(9600);            // SoftwareSerial es fiable hasta ~9600-19200",
+      "  pinMode(LED_BUILTIN, OUTPUT);",
+      "}",
+      "",
+      "void loop() {",
+      "  while (link.available() > 0) {",
+      "    char c = link.read();",
+      "    if (c == '\\\\n' || c == '\\\\r') {",
+      "      if (buf.length() > 0) {",
+      "        buf.trim();",
+      "        digitalWrite(LED_BUILTIN, buf.equalsIgnoreCase(\"ON\") ? HIGH : LOW);",
+      "        Serial.print(F(\"Recibido: \")); Serial.println(buf);",
+      "        buf = \"\";",
+      "      }",
+      "    } else {",
+      "      buf += c;",
+      "    }",
+      "  }",
+      "  $0",
+      "}"
+    ],
+    "description": "Puente serie ESP32->Arduino con nivel logico seguro"
+  },
+
+  "print portable AVR/ESP32 (sin Serial.printf)": {
+    "prefix": "aprintf",
+    "scope": "cpp",
+    "body": [
+      "// Serial.printf existe en ESP32 pero NO en AVR.",
+      "char buf[${1:64}];",
+      "snprintf(buf, sizeof(buf), \"${2:valor=%d}\", ${3:valor});",
+      "Serial.println(buf);$0"
+    ],
+    "description": "Formateo portable entre AVR y ESP32"
+  },
+
+  "Lectura analogica promediada": {
+    "prefix": "aanalog",
+    "scope": "cpp",
+    "body": [
+      "int readAveraged(uint8_t pin, uint8_t samples = ${1:16}) {",
+      "  long total = 0;",
+      "  for (uint8_t i = 0; i < samples; i++) {",
+      "    total += analogRead(pin);",
+      "    delayMicroseconds(200);",
+      "  }",
+      "  return (int)(total / samples);",
+      "}$0"
+    ],
+    "description": "Promedia lecturas del ADC para reducir ruido"
+  }
+}

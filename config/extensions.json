@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "platformio.platformio-ide",
+    "llvm-vs-code-extensions.vscode-clangd",
+    "ms-python.python",
+    "redhat.vscode-yaml",
+    "usernamehw.errorlens",
+    "gruntfuggly.todo-tree"
+  ],
+  "unwantedRecommendations": [
+    "ms-vscode.cpptools",
+    "ms-vscode.cpptools-extension-pack"
+  ]
+}

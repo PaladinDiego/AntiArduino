@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug ESP32-S3/C3/C6 (esp-builtin, USB-JTAG nativo)",
+      "type": "platformio-debug",
+      "request": "launch",
+      "executable": "${workspaceFolder}/.pio/build/esp32-s3-devkitc-1/firmware.elf",
+      "toolchainBinDir": "${env:USERPROFILE}/.platformio/packages/toolchain-xtensa-esp32s3/bin",
+      "preLaunchTask": "Arduino: Stop Monitor",
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "name": "Debug ESP32 clasico (esp-prog / JTAG externo)",
+      "type": "platformio-debug",
+      "request": "launch",
+      "executable": "${workspaceFolder}/.pio/build/esp32dev/firmware.elf",
+      "toolchainBinDir": "${env:USERPROFILE}/.platformio/packages/toolchain-xtensa-esp32/bin",
+      "preLaunchTask": "Arduino: Stop Monitor",
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "name": "Debug STM32 (stlink)",
+      "type": "platformio-debug",
+      "request": "launch",
+      "executable": "${workspaceFolder}/.pio/build/bluepill_f103c8/firmware.elf",
+      "toolchainBinDir": "${env:USERPROFILE}/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+      "preLaunchTask": "Arduino: Stop Monitor",
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "name": "Debug Arduino Uno/Nano (avr-stub, OCUPA el puerto serie)",
+      "type": "platformio-debug",
+      "request": "launch",
+      "executable": "${workspaceFolder}/.pio/build/uno/firmware.elf",
+      "toolchainBinDir": "${env:USERPROFILE}/.platformio/packages/toolchain-atmelavr/bin",
+      "preLaunchTask": "Arduino: Stop Monitor",
+      "internalConsoleOptions": "openOnSessionStart"
+    }
+  ]
+}

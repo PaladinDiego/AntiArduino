@@ -1,0 +1,62 @@
+# AGENTS.md — Reglas permanentes de este workspace
+
+Este workspace es **embebido**. Todo lo de abajo son reglas, no sugerencias.
+
+## Reglas duras
+
+1. Compila y sube **siempre** con PlatformIO por CLI:
+   `%USERPROFILE%\.platformio\penv\Scripts\pio.exe`
+   Nunca sugieras abrir el Arduino IDE.
+2. Usa el Python de PIO (`penv\Scripts\python.exe`), no el del sistema.
+3. Verifica el puerto antes de cada upload (`scripts\preflight.ps1`).
+4. **Nunca** ejecutes `erase_flash`, cambies fuses ni quemes bootloader sin
+   confirmación explícita del usuario.
+5. Regenera `compile_commands.json` tras cambiar `platformio.ini` o `lib_deps`:
+   `pio run -e <env> -t compiledb`.
+6. El monitor serial se abre **solo** con `scripts\open_serial_monitor.ps1`
+   (vía schtasks). Nunca lances `pio device monitor` directo en la terminal
+   integrada: el Job Object del IDE lo mata.
+7. Cierra el monitor con `scripts\stop_serial_monitor.ps1` antes de cualquier
+   build o upload. El COM es exclusivo en Windows.
+8. ASCII-only en scripts `.ps1` y `.py`. La terminal es cp1252 y un emoji la
+   rompe con `UnicodeEncodeError`. Usa `[OK]`, `[FAIL]`, `[WARN]`.
+9. Prefiere `.cpp` con `#include <Arduino.h>` sobre `.ino`.
+10. Escribe configuración del IDE **solo** en `%APPDATA%\Antigravity IDE\User`.
+    El perfil `%APPDATA%\Antigravity\User` es del binario standalone y es
+    huérfano en esta máquina.
+
+## Estructura
+
+```
+__WORKDIR__\
+├── .vscode\            tasks.json, launch.json, extensions.json, snippets
+├── .agents\skills\     skill arduino-flash (SKILL.md + scripts)
+├── .antigravity-embedded\
+│   ├── boards.json     catálogo offline de placas
+│   ├── logs\           logs del monitor serial
+│   └── serial_plotter_live.html
+├── scripts\            PowerShell + Python reutilizables
+├── templates\          platformio.ini por familia de placa
+├── smoke-tests\        proyectos de validación generados por el instalador
+├── .clangd             flags que clang no entiende, eliminados
+├── AGENTS.md           este archivo
+├── SETUP_EMBEDDED.md   reporte de instalación (autogenerado)
+└── undo.ps1            revierte lo que hizo el instalador
+```
+
+## Atajos configurados
+
+| Atajo | Acción |
+|---|---|
+| `Ctrl+R` | Compilar |
+| `Ctrl+U` | Compilar + subir (sin monitor) |
+| `Ctrl+Alt+F` | Flash & Watch (ciclo completo) |
+| `Ctrl+Alt+M` / `Shift+M` | Monitor serial en ventana externa |
+| `Ctrl+Alt+S` | Cerrar monitor y liberar el COM |
+| `Ctrl+Shift+I` | Regenerar IntelliSense (compiledb) |
+
+## Anti-patrón conocido
+
+No abras `C:\Users\<tu-usuario>` como workspace. clangd intentará indexar todo
+el disco, marcará miles de errores fantasma y consumirá CPU sin sentido. Abre
+la carpeta del proyecto concreto.

@@ -1,0 +1,35 @@
+# .clangd - generado por antigravity-setup.ps1
+# Elimina los flags de GCC que clang no entiende en toolchains xtensa/avr/arm.
+# Sin esto, clangd marca cientos de errores fantasma en codigo que compila bien.
+CompileFlags:
+  Remove:
+    - -mlongcalls
+    - -mtext-section-literals
+    - -mno-serialize-volatile
+    - -mfix-esp32-psram-cache-issue
+    - -mfix-esp32-psram-cache-strategy=*
+    - -free
+    - -fipa-pta
+    - -fstrict-volatile-bitfields
+    - -fno-tree-switch-conversion
+    - -fno-shrink-wrap
+    - -flto
+    - -flto=*
+    - -fno-fat-lto-objects
+    - -mrelax
+    - -mmcu=*
+    - -march=*
+    - -mtune=*
+    - -mabi=*
+    - -mcall-prologues
+    - -mstrict-align
+    - -nostartfiles
+  Add:
+    - -Wno-unknown-attributes
+    - -Wno-unknown-warning-option
+Index:
+  Background: Build
+Diagnostics:
+  UnusedIncludes: None
+  Suppress:
+    - drv_unknown_argument

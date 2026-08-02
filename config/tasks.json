@@ -1,0 +1,139 @@
+{
+  "version": "2.0.0",
+  "options": {
+    "cwd": "${workspaceFolder}"
+  },
+  "presentation": {
+    "echo": true,
+    "reveal": "always",
+    "panel": "shared",
+    "clear": true
+  },
+  "tasks": [
+    {
+      "label": "Arduino: Compile",
+      "detail": "pio run  (Ctrl+R)",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "& '__PIO_EXE__' run"],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "Arduino: Upload",
+      "detail": "Cierra el monitor, compila y sube  (Ctrl+U)",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/flash_watch.ps1", "-NoMonitor"],
+      "group": "build",
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "Arduino: Flash & Watch",
+      "detail": "Ciclo completo: cerrar monitor, compilar, subir, reabrir monitor  (Ctrl+Alt+F)",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/flash_watch.ps1"],
+      "group": "build",
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "Arduino: Monitor (ventana externa)",
+      "detail": "Abre el monitor via schtasks, fuera del Job Object del IDE  (Ctrl+Alt+M)",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/open_serial_monitor.ps1", "-WorkDir", "${workspaceFolder}"],
+      "isBackground": false,
+      "problemMatcher": []
+    },
+    {
+      "label": "Arduino: Stop Monitor",
+      "detail": "Cierra el monitor y libera el puerto COM  (Ctrl+Alt+S)",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/stop_serial_monitor.ps1", "-WorkDir", "${workspaceFolder}"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Arduino: Preflight",
+      "detail": "Valida PlatformIO, entornos y puertos COM",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/preflight.ps1", "-WorkDir", "${workspaceFolder}"],
+      "problemMatcher": []
+    },
+    {
+      "label": "Arduino: Clean",
+      "detail": "pio run -t clean",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "& '__PIO_EXE__' run -t clean"],
+      "problemMatcher": []
+    },
+    {
+      "label": "PIO: Regenerar IntelliSense (compiledb)",
+      "detail": "Regenera compile_commands.json del entorno activo  (Ctrl+Shift+I)",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "& '__PIO_EXE__' run -t compiledb"],
+      "problemMatcher": []
+    },
+    {
+      "label": "PIO: Device List",
+      "detail": "Lista puertos serie detectados",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "& '__PIO_EXE__' device list"],
+      "problemMatcher": []
+    },
+    {
+      "label": "PIO: Detectar placa y driver",
+      "detail": "detect_board.py: chip, placa probable y driver necesario",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "& '__PIO_PYTHON__' '${workspaceFolder}/scripts/detect_board.py'"],
+      "problemMatcher": []
+    },
+    {
+      "label": "PIO: Buscar placas",
+      "detail": "pio boards <filtro>",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "& '__PIO_EXE__' boards '${input:boardQuery}'"],
+      "problemMatcher": []
+    },
+    {
+      "label": "PIO: Build Filesystem Image",
+      "detail": "Empaqueta data/ en SPIFFS/LittleFS",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "& '__PIO_EXE__' run -t buildfs"],
+      "problemMatcher": []
+    },
+    {
+      "label": "PIO: Upload Filesystem Image",
+      "detail": "Sube la imagen del sistema de archivos",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/stop_serial_monitor.ps1", "-WorkDir", "${workspaceFolder}"],
+      "problemMatcher": [],
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "PIO: ERASE FLASH (destructivo)",
+      "detail": "CUIDADO: borra toda la flash de la placa. Pide confirmacion.",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "$c = Read-Host 'Esto BORRA la flash completa. Escribe BORRAR para confirmar'; if ($c -eq 'BORRAR') { & '__PIO_EXE__' run -t erase } else { Write-Host '[OK] Cancelado.' }"],
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "boardQuery",
+      "type": "promptString",
+      "description": "Filtro de busqueda de placas (ej: esp32, uno, pico)",
+      "default": "esp32"
+    }
+  ]
+}

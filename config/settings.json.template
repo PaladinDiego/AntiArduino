@@ -1,0 +1,61 @@
+{
+  "platformio-ide.useBuiltinPIOCore": false,
+  "platformio-ide.useBuiltinPython": false,
+  "platformio-ide.customPATH": "__PIO_SCRIPTS__",
+  "platformio-ide.activateOnlyOnPlatformIOProject": false,
+  "platformio-ide.disablePIOHomeStartup": true,
+  "platformio-ide.forceUploadAndMonitor": false,
+  "platformio-ide.pioHomeServerHttpPort": 8008,
+  "platformio-ide.serialPort": "",
+  "platformio-ide.baudRate": 115200,
+  "C_Cpp.intelliSenseEngine": "disabled",
+__CLANGD_PATH_LINE__
+  "clangd.arguments": [
+    "--background-index",
+    "--clang-tidy",
+    "--completion-style=detailed",
+    "--header-insertion=iwyu",
+    "--pch-storage=memory",
+    "--log=error",
+    "--query-driver=__QUERY_DRIVER__"
+  ],
+  "clangd.onConfigChanged": "restart",
+  "files.associations": {
+    "*.ino": "cpp",
+    "*.pde": "cpp",
+    "*.h": "cpp",
+    "*.hpp": "cpp",
+    "platformio.ini": "ini"
+  },
+  "terminal.integrated.env.windows": {
+    "PATH": "__PIO_SCRIPTS__;${env:PATH}"
+  },
+  "terminal.integrated.shellIntegration.enabled": false,
+  "terminal.integrated.profiles.windows": {
+    "AG PowerShell (clean)": {
+      "path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass"]
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "AG PowerShell (clean)",
+  "terminal.integrated.automationProfile.windows": {
+    "path": "powershell.exe",
+    "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass"]
+  },
+  "editor.formatOnSave": false,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.rulers": [80, 120],
+  "files.exclude": {
+    "**/.pio/build": true,
+    "**/.pio/libdeps": false,
+    "**/node_modules": true
+  },
+  "search.exclude": {
+    "**/.pio": true
+  },
+  "git.enabled": true,
+  "telemetry.telemetryLevel": "off",
+  "workbench.colorTheme": "Default Dark+",
+  "python.languageServer": "Default"
+}

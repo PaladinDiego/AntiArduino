@@ -1,0 +1,38 @@
+[
+  {
+    "key": "ctrl+r",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Arduino: Compile"
+  },
+  {
+    "key": "ctrl+u",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Arduino: Upload"
+  },
+  {
+    "key": "shift+m",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Arduino: Monitor (ventana externa)",
+    "when": "editorTextFocus && editorLangId == 'cpp'"
+  },
+  {
+    "key": "ctrl+alt+m",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Arduino: Monitor (ventana externa)"
+  },
+  {
+    "key": "ctrl+alt+s",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Arduino: Stop Monitor"
+  },
+  {
+    "key": "ctrl+alt+f",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Arduino: Flash & Watch"
+  },
+  {
+    "key": "ctrl+shift+i",
+    "command": "workbench.action.tasks.runTask",
+    "args": "PIO: Regenerar IntelliSense (compiledb)"
+  }
+]

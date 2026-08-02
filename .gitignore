@@ -1,0 +1,22 @@
+# PowerShell / Logs / Temp
+*.ps1xml
+*.clixml
+*_history.txt
+setup.log
+undo.log
+*.bak_*
+_build/test_results/
+
+# PlatformIO & VS Code
+.pio/
+*.pio
+.vscode/
+compile_commands.json
+
+# Legacy v1.0 monolithic files & archives
+Antigravity-Setup-v1.0/
+Antigravity-Setup-v1.0.zip
+antigravity-setup.ps1
+ARQUITECTURA_SERIAL_MONITOR.md
+ENTREGA.md
+stop_serial_monitor.ps1
