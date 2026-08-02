@@ -88,9 +88,8 @@ foreach ($Ext in $Extensions) {
         $ExtJsonPath = Join-Path $ExtBase "extensions.json"
         if (Test-Path $ExtJsonPath) {
             Write-Log "Registrando extension en el manifiesto extensions.json del IDE..." "INFO"
-            Backup-File $ExtJsonPath
             $ExtJsonObj = Get-Content $ExtJsonPath -Raw -Encoding Ascii | ConvertFrom-Json
-            
+
             if (-not ($ExtJsonObj | Where-Object { $_.identifier.id -eq "platformio.platformio-ide" })) {
                 $NormalizedPath = "/$($TargetDir.Replace('\','/'))"
                 $NewEntry = [PSCustomObject]@{
@@ -100,10 +99,11 @@ foreach ($Ext in $Extensions) {
                     relativeLocation = $ExtFolder
                     metadata = [PSCustomObject]@{ isApplicationScoped = $true }
                 }
-                
+
                 $ExtJsonObj += $NewEntry
                 $NewJsonStr = $ExtJsonObj | ConvertTo-Json -Depth 10 -Compress
-                
+
+                Backup-File $ExtJsonPath
                 try {
                     $null = $NewJsonStr | ConvertFrom-Json
                     Set-Content -Path $ExtJsonPath -Value $NewJsonStr -Encoding Ascii -Force

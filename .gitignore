@@ -17,6 +17,6 @@ compile_commands.json
 Antigravity-Setup-v1.0/
 Antigravity-Setup-v1.0.zip
 antigravity-setup.ps1
-ARQUITECTURA_SERIAL_MONITOR.md
-ENTREGA.md
+/ARQUITECTURA_SERIAL_MONITOR.md
+/ENTREGA.md
 /stop_serial_monitor.ps1

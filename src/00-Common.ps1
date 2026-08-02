@@ -14,16 +14,24 @@ function Resolve-AntigravityProfile {
     if (Test-Path $ProgramsDir) {
         $Candidates = Get-ChildItem -Path $ProgramsDir -Filter "*ntigravity*" -Directory
         foreach ($Dir in $Candidates) {
-            $ProdJson = Join-Path $Dir.FullName "product.json"
-            if (Test-Path $ProdJson) {
+            $ProdJsonCandidates = @(
+                (Join-Path $Dir.FullName "product.json"),
+                (Join-Path $Dir.FullName "resources\app\product.json")
+            )
+            $ProdJson = $ProdJsonCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+            if ($ProdJson) {
                 $Data = Get-Content $ProdJson -Raw | ConvertFrom-Json
                 if ($Data.dataFolderName -eq ".antigravity-ide") {
-                    return Join-Path $Dir.FullName "bin\antigravity.cmd"
+                    $BinDir = Join-Path $Dir.FullName "bin"
+                    $Cmd = Get-ChildItem -Path $BinDir -Filter "*.cmd" -ErrorAction SilentlyContinue | Select-Object -First 1
+                    if ($Cmd) {
+                        return $Cmd.FullName
+                    }
                 }
             }
         }
     }
-    
+
     Write-Log "No se encontro un perfil de Antigravity IDE con dataFolderName = '.antigravity-ide'." "FAIL"
     throw "Perfil de Antigravity IDE no encontrado. Abortando operacion."
 }
