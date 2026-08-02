@@ -34,5 +34,6 @@ jobs:
     - name: DryRun Orchestrator Check
       shell: pwsh
       run: |
+        if (-not (Test-Path ".\Deploy-Environment.ps1")) { exit 1 }
         .\Deploy-Environment.ps1 -DryRun
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
