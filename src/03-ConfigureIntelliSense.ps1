@@ -19,9 +19,20 @@ if (Test-Path $ClangdTemplate) {
     if ($DryRun) {
         Write-Log "[DRYRUN] Copiaria .clangd a $WorkDir" "INFO"
     } else {
-        Backup-File $ClangdTarget
-        Copy-Item -Path $ClangdTemplate -Destination $ClangdTarget -Force
-        Write-Log ".clangd instalado en el workspace ($WorkDir)." "OK"
+        $ShouldCopyClangd = $true
+        if (Test-Path $ClangdTarget) {
+            $SourceHash = (Get-FileHash $ClangdTemplate -Algorithm SHA256).Hash
+            $TargetHash = (Get-FileHash $ClangdTarget -Algorithm SHA256).Hash
+            if ($SourceHash -eq $TargetHash) { $ShouldCopyClangd = $false }
+        }
+
+        if ($ShouldCopyClangd) {
+            if (Test-Path $ClangdTarget) { Backup-File $ClangdTarget }
+            Copy-Item -Path $ClangdTemplate -Destination $ClangdTarget -Force
+            Write-Log ".clangd instalado en el workspace ($WorkDir)." "OK"
+        } else {
+            Write-Log ".clangd sin cambios. Backup omitido." "OK"
+        }
     }
 }
 
@@ -63,7 +74,6 @@ Write-Log "Procesando settings.json..." "INFO"
 $SourceObj = Parse-JsonC $Content
 
 if (Test-Path $SettingsTarget) {
-    Backup-File $SettingsTarget
     if ($Force) {
         Write-Log "Modo -Force activo: Sobrescribiendo settings.json..." "WARN"
         $FinalObj = $SourceObj
@@ -94,8 +104,24 @@ if (Test-Path $SettingsTarget) {
 $NewJsonStr = $FinalObj | ConvertTo-Json -Depth 10
 try {
     $null = $NewJsonStr | ConvertFrom-Json
-    Set-Content -Path $SettingsTarget -Value $NewJsonStr -Encoding Ascii -Force
-    Write-Log "settings.json configurado correctamente." "OK"
+
+    $ShouldWrite = $true
+    if (Test-Path $SettingsTarget) {
+        $TempCompare = Join-Path $env:TEMP "settings_compare_$(Get-Random).json"
+        Set-Content -Path $TempCompare -Value $NewJsonStr -Encoding Ascii -Force
+        $NewHash = (Get-FileHash $TempCompare -Algorithm SHA256).Hash
+        $CurrentHash = (Get-FileHash $SettingsTarget -Algorithm SHA256).Hash
+        Remove-Item -Path $TempCompare -Force
+        if ($NewHash -eq $CurrentHash) { $ShouldWrite = $false }
+    }
+
+    if ($ShouldWrite) {
+        if (Test-Path $SettingsTarget) { Backup-File $SettingsTarget }
+        Set-Content -Path $SettingsTarget -Value $NewJsonStr -Encoding Ascii -Force
+        Write-Log "settings.json configurado correctamente." "OK"
+    } else {
+        Write-Log "settings.json sin cambios. Backup omitido." "OK"
+    }
 } catch {
     Write-Log "Error al validar settings.json. Restaurando..." "FAIL"
     $BakPath = Get-ChildItem -Path $AppDataDir -Filter "settings.json.bak_*" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
@@ -123,7 +149,6 @@ foreach ($Config in $MergeConfigs.GetEnumerator()) {
         $SourceObj = Parse-JsonC (Get-Content $Source -Raw -Encoding Ascii)
         
         if (Test-Path $Target) {
-            Backup-File $Target
             if ($Force) {
                 Write-Log "Modo -Force activo: Sobrescribiendo $File..." "WARN"
                 $FinalObj = $SourceObj
@@ -156,8 +181,24 @@ foreach ($Config in $MergeConfigs.GetEnumerator()) {
         $NewJsonStr = $FinalObj | ConvertTo-Json -Depth 10
         try {
             $null = $NewJsonStr | ConvertFrom-Json
-            Set-Content -Path $Target -Value $NewJsonStr -Encoding Ascii -Force
-            Write-Log "$File configurado." "OK"
+
+            $ShouldWrite = $true
+            if (Test-Path $Target) {
+                $TempCompare = Join-Path $env:TEMP "$($File)_compare_$(Get-Random).json"
+                Set-Content -Path $TempCompare -Value $NewJsonStr -Encoding Ascii -Force
+                $NewHash = (Get-FileHash $TempCompare -Algorithm SHA256).Hash
+                $CurrentHash = (Get-FileHash $Target -Algorithm SHA256).Hash
+                Remove-Item -Path $TempCompare -Force
+                if ($NewHash -eq $CurrentHash) { $ShouldWrite = $false }
+            }
+
+            if ($ShouldWrite) {
+                if (Test-Path $Target) { Backup-File $Target }
+                Set-Content -Path $Target -Value $NewJsonStr -Encoding Ascii -Force
+                Write-Log "$File configurado." "OK"
+            } else {
+                Write-Log "$File sin cambios. Backup omitido." "OK"
+            }
         } catch {
             Write-Log "Error al validar $File. Restaurando..." "FAIL"
             $BakPath = Get-ChildItem -Path $VsCodeDir -Filter "$File.bak_*" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
@@ -176,7 +217,6 @@ if (Test-Path $KeybindingsTemplate) {
     $NewKeyObj = Parse-JsonC (Get-Content $KeybindingsTemplate -Raw -Encoding Ascii)
     
     if (Test-Path $KeybindingsTarget) {
-        Backup-File $KeybindingsTarget
         if ($Force) {
             Write-Log "Modo -Force activo: Sobrescribiendo keybindings.json..." "WARN"
             $FinalKeyObj = $NewKeyObj
@@ -208,8 +248,24 @@ if (Test-Path $KeybindingsTemplate) {
     $NewKeyStr = $FinalKeyObj | ConvertTo-Json -Depth 10
     try {
         $null = $NewKeyStr | ConvertFrom-Json
-        Set-Content -Path $KeybindingsTarget -Value $NewKeyStr -Encoding Ascii -Force
-        Write-Log "keybindings.json configurado correctamente." "OK"
+
+        $ShouldWrite = $true
+        if (Test-Path $KeybindingsTarget) {
+            $TempCompare = Join-Path $env:TEMP "keybindings_compare_$(Get-Random).json"
+            Set-Content -Path $TempCompare -Value $NewKeyStr -Encoding Ascii -Force
+            $NewHash = (Get-FileHash $TempCompare -Algorithm SHA256).Hash
+            $CurrentHash = (Get-FileHash $KeybindingsTarget -Algorithm SHA256).Hash
+            Remove-Item -Path $TempCompare -Force
+            if ($NewHash -eq $CurrentHash) { $ShouldWrite = $false }
+        }
+
+        if ($ShouldWrite) {
+            if (Test-Path $KeybindingsTarget) { Backup-File $KeybindingsTarget }
+            Set-Content -Path $KeybindingsTarget -Value $NewKeyStr -Encoding Ascii -Force
+            Write-Log "keybindings.json configurado correctamente." "OK"
+        } else {
+            Write-Log "keybindings.json sin cambios. Backup omitido." "OK"
+        }
     } catch {
         Write-Log "Error al validar keybindings.json. Restaurando..." "FAIL"
         $BakPath = Get-ChildItem -Path $AppDataDir -Filter "keybindings.json.bak_*" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
