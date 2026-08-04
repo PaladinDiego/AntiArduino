@@ -1,0 +1,135 @@
+{
+  "$schema_note": "Manifiesto maquina-legible para agentes de IA. Complementa AGENTS.md y README.md, no los reemplaza.",
+  "orchestrator": "Deploy-Environment.ps1",
+  "undo_script": "undo.ps1",
+  "verify_script": "scripts/verify-install.ps1",
+  "modules": [
+    {
+      "name": "00-Preflight",
+      "file": "src/00-Preflight.ps1",
+      "order": 1,
+      "checks": [
+        "Windows de 64 bits",
+        "Python >= 3.9 en PATH (compara Major/Minor como enteros, no como double)",
+        "Perfil de Antigravity IDE resoluble via Resolve-AntigravityProfile"
+      ],
+      "runs_even_in_dry_run": true,
+      "aborts_pipeline_on_failure": true
+    },
+    {
+      "name": "01-InstallPioCore",
+      "file": "src/01-InstallPioCore.ps1",
+      "order": 2,
+      "checks": [
+        "pio.exe presente en %USERPROFILE%\\.platformio\\penv\\Scripts",
+        "penv\\Scripts en PATH de usuario (persistente)",
+        "penv\\Scripts en PATH de la sesion actual"
+      ],
+      "runs_even_in_dry_run": false,
+      "aborts_pipeline_on_failure": true
+    },
+    {
+      "name": "02-InstallExtensions",
+      "file": "src/02-InstallExtensions.ps1",
+      "order": 3,
+      "checks": [
+        "llvm-vs-code-extensions.vscode-clangd instalada",
+        "platformio.platformio-ide instalada (marketplace o fallback manual via GitHub API)"
+      ],
+      "runs_even_in_dry_run": false,
+      "aborts_pipeline_on_failure": true,
+      "notes": "Puede imprimir un crash benigno de Electron al final de --list-extensions. Ver known_flaky_behaviors."
+    },
+    {
+      "name": "03-ConfigureIntelliSense",
+      "file": "src/03-ConfigureIntelliSense.ps1",
+      "order": 4,
+      "checks": [
+        ".clangd copiado al workspace",
+        "settings.json fusionado (OwnedKeys actualizadas, resto preservado)",
+        "tasks.json y launch.json fusionados por label/name",
+        "keybindings.json fusionado sin pisar atajos en conflicto"
+      ],
+      "runs_even_in_dry_run": false,
+      "aborts_pipeline_on_failure": true
+    },
+    {
+      "name": "04-InstallPlatforms",
+      "file": "src/04-InstallPlatforms.ps1",
+      "order": 5,
+      "checks": [
+        "Cada plataforma en -Platforms presente en %USERPROFILE%\\.platformio\\platforms"
+      ],
+      "runs_even_in_dry_run": false,
+      "aborts_pipeline_on_failure": true
+    },
+    {
+      "name": "05-RunSmokeTests",
+      "file": "src/05-RunSmokeTests.ps1",
+      "order": 6,
+      "checks": [
+        "Compilacion exitosa para 'uno' (siempre)",
+        "Compilacion exitosa para 'esp32dev' (solo si no se paso -QuickSmoke)",
+        "compile_commands.json generado por entorno probado"
+      ],
+      "runs_even_in_dry_run": false,
+      "aborts_pipeline_on_failure": true,
+      "skippable_with": "-SkipSmokeTests"
+    },
+    {
+      "name": "06-DeployWorkspaceAssets",
+      "file": "src/06-DeployWorkspaceAssets.ps1",
+      "order": 7,
+      "checks": [
+        "scripts/, templates/, snippets/ copiados al workspace",
+        "skills/ copiado a $WorkDir\\.agents\\skills Y a %USERPROFILE%\\.gemini\\config\\skills",
+        "AGENTS.md.template copiado como AGENTS.md al workspace (throw duro si falta la plantilla)"
+      ],
+      "runs_even_in_dry_run": false,
+      "aborts_pipeline_on_failure": true
+    },
+    {
+      "name": "07-GenerateReport",
+      "file": "src/07-GenerateReport.ps1",
+      "order": 8,
+      "checks": [
+        "SETUP_EMBEDDED.md generado en el workspace con estado real detectado en disco"
+      ],
+      "runs_even_in_dry_run": false,
+      "aborts_pipeline_on_failure": true
+    }
+  ],
+  "excluded_from_pipeline_loop": [
+    {
+      "file": "src/00-Common.ps1",
+      "reason": "Libreria de funciones compartidas (Write-Log, Resolve-AntigravityProfile, Backup-File, Parse-JsonC), dot-sourced por cada modulo. Deploy-Environment.ps1 la excluye explicitamente del bucle con Where-Object."
+    }
+  ],
+  "cli_flags": {
+    "-DryRun": "Simula toda la instalacion sin escribir nada, excepto 00-Preflight que valida el sistema real siempre (no esta gateado por DryRun).",
+    "-QuickSmoke": "En 05-RunSmokeTests, prueba solo la placa 'uno' (~3s) en vez de 'esp32dev' y 'uno' (~140s).",
+    "-SkipSmokeTests": "Omite el modulo 05-RunSmokeTests por completo.",
+    "-Force": "Fuerza reinstalacion/sobrescritura aunque ya exista o el contenido sea identico. Sobrescribe configuracion real del usuario.",
+    "-WorkDir <ruta>": "Cambia el workspace de destino. Default: C:\\embedded-dev.",
+    "-Platforms <lista>": "Restringe las plataformas de PlatformIO a instalar/verificar. Default: las 6 en platforms_default."
+  },
+  "known_flaky_behaviors": [
+    {
+      "pattern": "createInstance.*antigravityAnalytics",
+      "severity": "benign",
+      "context": "Aparece durante 02-InstallExtensions.ps1 al invocar '& $AgCmd --list-extensions'. A veces el proceso crashea al cerrar (stack trace nativo de V8/Node, ExitCode residual no-cero, observado 134) despues de ya haber entregado el listado de extensiones por stdout. El modulo ya valida esto: solo falla de verdad si $Installed (la salida capturada) esta vacia. No es señal de instalacion rota si las extensiones ya se detectaron como 'ya esta instalada' en el log."
+    }
+  ],
+  "platforms_default": ["atmelavr", "atmelsam", "espressif8266", "espressif32", "ststm32", "raspberrypi"],
+  "verified_ide_versions": [
+    {
+      "nameShort": "Antigravity IDE",
+      "applicationName": "antigravity-ide",
+      "dataFolderName": ".antigravity-ide",
+      "version": "1.107.0",
+      "binary_observed": "antigravity-ide.cmd",
+      "note": "Unica version confirmada end-to-end (pipeline completo en -DryRun, 5/5 corridas limpias) a la fecha de este manifiesto. No asumir que el nombre del binario o la ubicacion de product.json son iguales en otras versiones: usar siempre Resolve-AntigravityProfile."
+    }
+  ],
+  "workspace_default": "C:\\embedded-dev"
+}

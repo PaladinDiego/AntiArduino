@@ -5,6 +5,14 @@ desarrollo embebido (Arduino, ESP32, ESP8266, STM32, RP2040) de forma automatiza
 
 ---
 
+## Para agentes de IA
+
+Si eres un agente ejecutando esto en nombre de un usuario, lee
+[`AGENTS.md`](AGENTS.md) primero, no este README. Este README está escrito
+para humanos.
+
+---
+
 ## Uso rápido
 
 1. Clona este repositorio o descarga el contenido.
