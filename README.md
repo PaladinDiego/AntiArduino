@@ -11,6 +11,27 @@ Si eres un agente ejecutando esto en nombre de un usuario, lee
 [`AGENTS.md`](AGENTS.md) primero, no este README. Este README está escrito
 para humanos.
 
+Si eres un agente ejecutando esto en nombre de un usuario (por ejemplo, te pidió
+instalar este repositorio a partir de un link) y **todavía no tienes el repo
+clonado en disco**, haz esto primero:
+
+```powershell
+Test-Path "$env:USERPROFILE\AntiArduino"
+```
+
+- Si devuelve `False`, clona el repo ahí y entra:
+```powershell
+  git clone https://github.com/PaladinDiego/AntiArduino.git "$env:USERPROFILE\AntiArduino"
+  cd "$env:USERPROFILE\AntiArduino"
+```
+- Si devuelve `True`, **no toques esa carpeta todavía.** Pregúntale al usuario si
+  quiere actualizarla (`git pull`), usarla tal cual, o clonar en otra ubicación —
+  y espera su respuesta antes de continuar.
+
+Una vez que tu directorio de trabajo sea esa carpeta clonada, **deja de leer este
+README y ve directo a [`AGENTS.md`](AGENTS.md)** — ahí está el contrato real de
+instalación. Este README está escrito para humanos.
+
 ---
 
 ## Uso rápido

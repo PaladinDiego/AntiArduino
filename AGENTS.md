@@ -12,6 +12,14 @@ que debes leer. No leas `README.md` primero — ese está escrito para humanos
 (ver la nota al principio del README).
 
 ---
+## Paso 0 — ¿ya tienes el repo clonado?
+
+Si llegaste a este archivo **sin haber clonado el repo** (por ejemplo, lo leíste
+directo vía URL raw sin pasar por GitHub), detente: los pasos siguientes asumen
+que tu directorio de trabajo ya es la raíz del repo clonado. Ve a la sección
+"Para agentes de IA" de [`README.md`](README.md) y sigue el comando de clonado
+que está ahí — no lo repliques de memoria aquí, para no tener dos copias que
+puedan desincronizarse.
 
 ## Si eres un agente ejecutando este repo por primera vez, haz EXACTAMENTE esto
 
