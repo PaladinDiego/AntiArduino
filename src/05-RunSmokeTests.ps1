@@ -54,7 +54,7 @@ void loop() { }
     Write-Log "Generando compiledb..." "INFO"
     $Proc = Start-Process -FilePath "pio.exe" -ArgumentList "run -e $Board -t compiledb" -Wait -NoNewWindow -PassThru
     
-    $CompileDb = Join-Path $TestDir ".pio\build\$Board\compile_commands.json"
+    $CompileDb = Join-Path $TestDir "compile_commands.json"
     if (Test-Path $CompileDb) {
         Write-Log "compile_commands.json generado exitosamente para $Board." "OK"
     } else {
