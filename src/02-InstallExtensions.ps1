@@ -54,16 +54,27 @@ foreach ($Ext in $Extensions) {
         $TempVsix = Join-Path $env:TEMP $Asset.name
         Write-Log "Descargando $($Asset.name)..." "INFO"
         Invoke-WebRequest -Uri $Asset.browser_download_url -OutFile $TempVsix -UseBasicParsing
-        
+
         $ExtBase = Join-Path $env:USERPROFILE ".antigravity-ide\extensions"
         if (-not (Test-Path $ExtBase)) { New-Item -ItemType Directory -Path $ExtBase -Force | Out-Null }
-        
+
         $ExtFolder = "platformio.platformio-ide-$($Release.tag_name -replace '^v','')"
         $TargetDir = Join-Path $ExtBase $ExtFolder
         if (Test-Path $TargetDir) { Remove-Item -Path $TargetDir -Recurse -Force }
-        
+
         Write-Log "Extrayendo VSIX (ZIP)..." "INFO"
-        Expand-Archive -Path $TempVsix -DestinationPath $TargetDir -Force
+        # Un .vsix es un ZIP valido, pero Expand-Archive en Windows PowerShell
+        # 5.1 valida la EXTENSION literal del archivo (no el contenido) y
+        # rechaza cualquier cosa que no termine en ".zip" con
+        # "IOException: .vsix no es un formato de archivo de almacenamiento
+        # compatible." Reproducido de forma aislada antes de este fix.
+        # Solucion: copiar a una ruta temporal con extension .zip y expandir
+        # esa copia; el .vsix original no se necesita despues de este punto.
+        $TempZip = [System.IO.Path]::ChangeExtension($TempVsix, ".zip")
+        if (Test-Path $TempZip) { Remove-Item -Path $TempZip -Force }
+        Copy-Item -Path $TempVsix -Destination $TempZip -Force
+        Expand-Archive -Path $TempZip -DestinationPath $TargetDir -Force
+        Remove-Item -Path $TempZip -Force -ErrorAction SilentlyContinue
         
         $Inner = Join-Path $TargetDir "extension"
         if (Test-Path $Inner) {
