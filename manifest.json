@@ -59,7 +59,8 @@
       "file": "src/04-InstallPlatforms.ps1",
       "order": 5,
       "checks": [
-        "Cada plataforma en -Platforms presente en %USERPROFILE%\\.platformio\\platforms"
+        "Cada plataforma en -Platforms presente en %USERPROFILE%\\.platformio\\platforms",
+        "Si espressif32 esta en -Platforms: intelhex, pycryptodome y esptool instalados via penv\\Scripts\\pip.exe (nunca pip global)"
       ],
       "runs_even_in_dry_run": false,
       "aborts_pipeline_on_failure": true
