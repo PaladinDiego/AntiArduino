@@ -120,7 +120,7 @@ if ($Profile) {
 }
 
 # 4. settings.json contiene las claves de $OwnedKeys esperadas
-$OwnedKeys = @("clangd.path", "clangd.arguments", "platformio.activateOnlyOnPlatformIOProject", "C_Cpp.intelliSenseEngine")
+$OwnedKeys = @("clangd.path", "clangd.arguments", "platformio-ide.activateOnlyOnPlatformIOProject", "C_Cpp.intelliSenseEngine")
 $SettingsPath = Join-Path $env:APPDATA "Antigravity IDE\User\settings.json"
 if (Test-Path $SettingsPath) {
     try {

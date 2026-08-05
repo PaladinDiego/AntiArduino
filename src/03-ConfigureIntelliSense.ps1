@@ -79,7 +79,7 @@ if (Test-Path $SettingsTarget) {
         $FinalObj = $SourceObj
     } else {
         $TargetObj = Parse-JsonC (Get-Content $SettingsTarget -Raw -Encoding Ascii)
-        $OwnedKeys = @("clangd.path", "clangd.arguments", "platformio.activateOnlyOnPlatformIOProject", "C_Cpp.intelliSenseEngine")
+        $OwnedKeys = @("clangd.path", "clangd.arguments", "platformio-ide.activateOnlyOnPlatformIOProject", "C_Cpp.intelliSenseEngine")
 
         foreach ($Prop in $SourceObj.psobject.properties) {
             if ($OwnedKeys -contains $Prop.Name) {
