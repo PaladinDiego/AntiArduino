@@ -34,6 +34,23 @@ instalación. Este README está escrito para humanos.
 
 ---
 
+## Prerequisitos
+
+- **Python >= 3.9** en el PATH (`python --version`). Sin esto, el primer módulo
+  (`00-Preflight`) aborta. Si falta, el instalador te ofrece el comando de
+  remediación (`winget install Python.Python.3.12 ...`) y, si tienes `winget`
+  disponible en una consola interactiva, puede instalarlo por ti tras
+  confirmar.
+- **git** (`git --version`) — no es bloqueante, pero sin él algunas librerías
+  de Arduino que PlatformIO descarga desde repositorios no se podrán instalar.
+
+Guía paso a paso para comprobar/instalar ambos:
+[docs/GUIA_INSTALACION.md → Paso 0](docs/GUIA_INSTALACION.md#paso-0--comprueba-que-tienes-lo-necesario).
+Si `00-Preflight` falla, revisa
+[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+
+---
+
 ## Uso rápido
 
 1. Clona este repositorio o descarga el contenido.

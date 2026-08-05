@@ -14,7 +14,8 @@
         "Perfil de Antigravity IDE resoluble via Resolve-AntigravityProfile"
       ],
       "runs_even_in_dry_run": true,
-      "aborts_pipeline_on_failure": true
+      "aborts_pipeline_on_failure": true,
+      "notes": "Si el check de Python falla y NO es -DryRun, ofrece auto-instalacion via winget (Read-Host S/N) solo si la consola es interactiva (stdin no redirigido) y winget esta disponible. En sesiones no interactivas (agentes) omite el prompt automaticamente y falla con el comando de remediacion impreso en el log."
     },
     {
       "name": "01-InstallPioCore",

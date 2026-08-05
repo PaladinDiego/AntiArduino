@@ -21,6 +21,38 @@ que tu directorio de trabajo ya es la raíz del repo clonado. Ve a la sección
 que está ahí — no lo repliques de memoria aquí, para no tener dos copias que
 puedan desincronizarse.
 
+## Prerequisitos del sistema (verifica antes de correr nada)
+
+`00-Preflight.ps1` (el primer módulo, corre siempre incluso en `-DryRun`)
+exige:
+
+- **Python >= 3.9 en el PATH.** Compara Major/Minor como enteros.
+- Windows de 64 bits.
+- Perfil de Antigravity IDE resoluble (ver `Resolve-AntigravityProfile` más
+  abajo).
+
+`git` no es un check bloqueante de Preflight, pero sin él PlatformIO no podrá
+descargar algunas librerías de Arduino desde repositorios durante la
+compilación — si el usuario reporta un fallo de compilación por una librería
+que no aparece, comprueba `git --version` antes de asumir otra causa.
+
+Si Preflight falla por Python, el propio módulo ya imprime el comando de
+remediación exacto (`winget install Python.Python.3.12 ...`) en el log
+`[FAIL]`. Desde 2026, si la consola es interactiva (stdin no redirigido) y
+`winget` está disponible, Preflight puede ofrecer instalarlo por ti tras una
+confirmación explícita (`Read-Host`, S/N) — **esto es la única excepción
+conocida a "no arregles nada automáticamente"** en este repo, y solo aplica a
+esa pregunta puntual. Si tu sesión es no interactiva (stdin redirigido, caso
+típico de un agente automatizado), Preflight detecta esto y omite el prompt
+por su cuenta — no necesitas hacer nada especial, pero tampoco esperes que se
+instale nada por ti: falla con el mensaje de remediación y debes reportarlo
+al usuario o esperar instrucciones, igual que cualquier otro `[FAIL]`.
+
+Ver también [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) (`## ERROR:
+Python NO encontrado en PATH`) y `manifest.json` → `modules[0].checks`.
+
+---
+
 ## Si eres un agente ejecutando este repo por primera vez, haz EXACTAMENTE esto
 
 Sin variantes. En este orden. Desde PowerShell, con el directorio de trabajo en
