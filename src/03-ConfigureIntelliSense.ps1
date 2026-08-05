@@ -146,7 +146,10 @@ foreach ($Config in $MergeConfigs.GetEnumerator()) {
     
     if (Test-Path $Source) {
         Write-Log "Procesando $File..." "INFO"
-        $SourceObj = Parse-JsonC (Get-Content $Source -Raw -Encoding Ascii)
+        $RawContent = Get-Content $Source -Raw -Encoding Ascii
+        $RawContent = $RawContent -replace "__PIO_EXE__", (Join-Path $PioDir "pio.exe").Replace('\', '\\')
+        $RawContent = $RawContent -replace "__PIO_PYTHON__", (Join-Path $PioDir "python.exe").Replace('\', '\\')
+        $SourceObj = Parse-JsonC $RawContent
         
         if (Test-Path $Target) {
             if ($Force) {
