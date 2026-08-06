@@ -96,4 +96,16 @@ if ($RemovePlatforms) {
     }
 }
 
+# 6. Invalidar estado incremental
+# Si -RemovePlatforms/-RemoveExtensions quitaron algo que .deploy-state.json
+# marcaba como "Success", una corrida posterior con -Resume saltaria la
+# reinstalacion creyendo que seguia intacta. Se borra el archivo completo en
+# vez de intentar invalidar entradas puntuales: es mas simple y fuerza una
+# re-verificacion total en la proxima corrida, que es lo correcto tras revertir.
+$StateFile = Join-Path $PSScriptRoot ".deploy-state.json"
+if (Test-Path $StateFile) {
+    Undo-Log "Eliminando estado incremental (.deploy-state.json) para forzar re-verificacion completa..." "INFO"
+    if (-not $WhatIf) { Remove-Item -Path $StateFile -Force }
+}
+
 Undo-Log "=== Reversión completada ===" "OK"
