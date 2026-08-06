@@ -6,6 +6,7 @@ setup.log
 undo.log
 *.bak_*
 _build/test_results/
+/.deploy-state.json
 
 # PlatformIO & VS Code
 .pio/
