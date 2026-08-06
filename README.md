@@ -69,7 +69,22 @@ Si `00-Preflight` falla, revisa
 .\Deploy-Environment.ps1 -Force
 .\Deploy-Environment.ps1 -WorkDir "D:\embedded"
 .\Deploy-Environment.ps1 -Platforms atmelavr,espressif32
+.\Deploy-Environment.ps1 -Resume
+.\Deploy-Environment.ps1 -OnlyModules 04,05
 ```
+
+**`-Resume`** — si ya instalaste antes y solo quieres reintentar tras corregir
+algo, este flag saltea los módulos más costosos (`02-InstallExtensions`,
+`04-InstallPlatforms`, `05-RunSmokeTests` — instalación de extensiones,
+plataformas y compilación de prueba) si nada relevante cambió desde la
+última corrida exitosa. El resto de los módulos siempre se re-verifica en
+vivo. El estado se guarda automáticamente en cada corrida (`.deploy-state.json`,
+no versionado) y se invalida solo si el contenido relevante cambió — no hace
+falta borrarlo a mano.
+
+**`-OnlyModules <lista>`** — ejecuta solo los módulos indicados (por número o
+nombre), por ejemplo tras editar uno en particular. Pensado para depuración
+puntual, no para uso rutinario.
 
 ---
 

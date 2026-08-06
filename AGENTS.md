@@ -87,6 +87,50 @@ pida explícitamente.
 
 ---
 
+## Reintentos incrementales (`-Resume` / `-OnlyModules`)
+
+Si ya corriste `Deploy-Environment.ps1` una vez en esta sesión (real, no
+`-DryRun`) y necesitas volver a correrlo — por ejemplo, porque aplicaste un
+fix a un solo módulo y quieres verificarlo — **no repitas el flujo completo
+del paso 3 desde cero sin más.** Desde 2026-08-05, el orquestador soporta dos
+flags para esto:
+
+- **`.\Deploy-Environment.ps1 -Resume`**: corre las 8 fases en el mismo orden
+  de siempre, pero `02-InstallExtensions`, `04-InstallPlatforms` y
+  `05-RunSmokeTests` se saltean (log `[SKIP]`) si su contenido no cambió desde
+  la última corrida real exitosa. Son los únicos 3 módulos cacheables — el
+  resto (`00`, `01`, `03`, `06`, `07`) siempre corre en vivo, con o sin
+  `-Resume`, porque ya es barato por su propio diseño interno. La decisión de
+  saltar o no se basa en un hash del contenido real (script + templates +
+  parámetros relevantes), **no** en que "ya se corrió antes" — si editaste
+  `04-InstallPlatforms.ps1`, esa corrida se re-ejecuta sola, y además fuerza
+  que `05-RunSmokeTests` también se re-ejecute aunque no lo hayas tocado
+  (05 compila con lo que 04 instaló, así que un cambio en 04 puede invalidar
+  el resultado cacheado de 05).
+- **`.\Deploy-Environment.ps1 -OnlyModules 04,05`**: corre *exclusivamente*
+  los módulos nombrados (por número o nombre completo), sin tocar el resto —
+  ni siquiera `00-Preflight`. Los módulos nombrados siempre se ejecutan de
+  verdad, nunca se saltean por cache. Útil para depuración puntual explícita,
+  que es exactamente la excepción que ya contemplaba la regla de "no
+  ejecutes los scripts de `src/` individualmente" más arriba.
+
+`-Resume -DryRun` es seguro y útil como "estado del pipeline": calcula y
+muestra qué se saltearía sin escribir nada. `-Force` sigue ganando sobre
+`-Resume` — con ambos activos, los 3 módulos cacheables se re-ejecutan sin
+importar el estado guardado (mismo comportamiento de siempre de `-Force`,
+ahora explícito también respecto al cache).
+
+El estado vive en `.deploy-state.json` (raíz del repo, gitignored). Se
+actualiza automáticamente en cada corrida real exitosa, uses `-Resume` o no
+— así que no necesitas planear con anticipación cuándo usarlo. Si corriste
+`undo.ps1`, ese archivo se borra solo al final (evita que el cache mienta
+sobre algo que la reversión acaba de quitar).
+
+Ver `manifest.json` → `incremental_state` para el detalle completo del
+mecanismo (qué entra en cada fingerprint, por qué solo esos 3 módulos).
+
+---
+
 ## NO hagas esto
 
 Cosas que ya se probaron en esta sesión de desarrollo y fallan o son

@@ -108,12 +108,24 @@
     }
   ],
   "cli_flags": {
-    "-DryRun": "Simula toda la instalacion sin escribir nada, excepto 00-Preflight que valida el sistema real siempre (no esta gateado por DryRun).",
+    "-DryRun": "Simula toda la instalacion sin escribir nada, excepto 00-Preflight que valida el sistema real siempre (no esta gateado por DryRun). Combinado con -Resume, calcula y muestra que modulos se saltearian pero nunca escribe .deploy-state.json (sigue siendo 100% de solo lectura).",
     "-QuickSmoke": "En 05-RunSmokeTests, prueba solo la placa 'uno' (~3s) en vez de 'esp32dev' y 'uno' (~140s).",
     "-SkipSmokeTests": "Omite el modulo 05-RunSmokeTests por completo.",
-    "-Force": "Fuerza reinstalacion/sobrescritura aunque ya exista o el contenido sea identico. Sobrescribe configuracion real del usuario.",
+    "-Force": "Fuerza reinstalacion/sobrescritura aunque ya exista o el contenido sea identico. Sobrescribe configuracion real del usuario. Tambien anula la consulta de cache de -Resume para 02/04/05: con -Force, esos modulos nunca se saltean sin importar el estado guardado.",
     "-WorkDir <ruta>": "Cambia el workspace de destino. Default: C:\\embedded-dev.",
-    "-Platforms <lista>": "Restringe las plataformas de PlatformIO a instalar/verificar. Default: las 6 en platforms_default."
+    "-Platforms <lista>": "Restringe las plataformas de PlatformIO a instalar/verificar. Default: las 6 en platforms_default.",
+    "-Resume": "Activa la consulta del estado incremental (.deploy-state.json): 02-InstallExtensions, 04-InstallPlatforms y 05-RunSmokeTests se saltean (log [SKIP]) si su fingerprint de contenido no cambio desde la ultima corrida real exitosa. Sin este flag, el pipeline corre las 8 fases igual que siempre (el estado se sigue grabando en cada corrida real, solo no se consulta). Ver incremental_state.",
+    "-OnlyModules <lista>": "Ejecuta exclusivamente los modulos nombrados (por numero, ej. '04', o nombre completo, ej. '04-InstallPlatforms'), ignorando el resto -- incluido 00-Preflight, que de otro modo siempre corre. Los modulos nombrados siempre se ejecutan (nunca se saltean por cache, aunque -Resume este activo). Falla con [FAIL] y exit 1 si algun nombre no coincide con un modulo real."
+  },
+  "incremental_state": {
+    "file": ".deploy-state.json",
+    "location": "Raiz del repo (junto a Deploy-Environment.ps1), gitignored. Independiente de -WorkDir: el estado describe si este checkout ya aprovisiono la maquina, no un workspace en particular.",
+    "cacheable_modules": ["02-InstallExtensions", "04-InstallPlatforms", "05-RunSmokeTests"],
+    "why_only_these_three": "Son los unicos con costo recurrente medido cuando 'ya esta todo instalado': 02 spawnea el IDE en modo headless (--list-extensions, puede tardar segundos y ocasionalmente crashea de forma benigna, ver known_flaky_behaviors), 04 corre pip install incondicionalmente si espressif32 esta pedido, y 05 compila firmware real (~140s sin -QuickSmoke). Los modulos 00,01,03,06,07 ya son baratos por su propio diseno interno (Test-Path / hash-compare por archivo) y siempre corren en vivo -- cachearlos no ahorraria tiempo real.",
+    "fingerprint_composition": "SHA-256 del script del modulo + src/00-Common.ps1 + los parametros CLI que afectan su comportamiento (-Platforms para 04/05, -QuickSmoke para 05). Nunca se basa en timestamps.",
+    "dependency_chain": "05-RunSmokeTests pliega el fingerprint de 04-InstallPlatforms dentro del suyo: 05 compila usando las plataformas/toolchains que 04 instala (incluidas las dependencias de Python de espressif32), asi que un cambio en 04 invalida tambien el cache de 05 aunque el script de 05 no haya cambiado. Es la unica cadena de dependencia modelada; no existe un grafo generico entre modulos.",
+    "schema_version": 1,
+    "invalidated_by": "undo.ps1 borra .deploy-state.json por completo al final (forzando re-verificacion total en la proxima corrida), porque -RemovePlatforms/-RemoveExtensions pueden dejar una entrada 'Success' que ya no es cierta."
   },
   "known_flaky_behaviors": [
     {
